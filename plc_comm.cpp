@@ -154,13 +154,7 @@ void PlcComm::onModbusStateChanged(QModbusDevice::State state)
         m_readTimer->start();
         log(Protocol::LogInfo, QStringLiteral("Modbus 已连接，开始 1 秒轮询健康/伺服/电池"));
         periodicRead();
-        Job netJob;
-        netJob.type = JobWrite;
-        netJob.address = Protocol::kAddrNetwork;
-        netJob.cmd = Protocol::kCmdNetwork;
-        netJob.frame = m_networkFrame;
-        enqueue(netJob, false);
-        log(Protocol::LogInfo, QStringLiteral("连接后下发当前网络状态帧"));
+        // 单步调试阶段不把 MQTT/串口链路写成 0x08。网络帧仍保留，恢复链路上报时再入队。
     } else {
         m_readTimer->stop();
         m_commandPollTimer->stop();

@@ -43,8 +43,9 @@ void CommunicationManager::startAll(const AppConfig &config)
         m_mqtt = nullptr;
     }
     startPlc();
-    startWeather();
-    startMqtt();
+    // 当前只做 PLC 收发和单步调试。MQTT、风速雨雪、温湿度串口先不启动。
+    emit logMessage(Protocol::LogInfo, QStringLiteral("系统"),
+                    QStringLiteral("当前只调试 PLC。MQTT 和气象/温湿度串口已暂停，连接后不写 42700 网络状态。"));
 }
 
 bool CommunicationManager::isPlcConnected() const
@@ -81,15 +82,6 @@ void CommunicationManager::startPlc()
 void CommunicationManager::bindPlc()
 {
     connect(m_plc, &PlcComm::connectionStateChanged, this, &CommunicationManager::plcConnectionChanged);
-    connect(m_plc, &PlcComm::connectionStateChanged, this, [this](bool connected) {
-        if (connected) {
-            pushNetwork(Protocol::kNetMqtt, m_mqtt && m_mqtt->isConnected());
-            pushNetwork(Protocol::kNetWindRain, m_windRainUp);
-            pushNetwork(Protocol::kNetTempHum, m_climateUp);
-            pushNetwork(Protocol::kNetUps, false);
-            pushNetwork(Protocol::kNetCharger, false);
-        }
-    });
     connect(m_plc, &PlcComm::healthUpdated, this, &CommunicationManager::healthUpdated);
     connect(m_plc, &PlcComm::servoUpdated, this, &CommunicationManager::servoUpdated);
     connect(m_plc, &PlcComm::commandFinished, this, &CommunicationManager::commandFinished);
