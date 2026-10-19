@@ -2,6 +2,7 @@
 
 #include <QModbusDataUnit>
 #include <QModbusReply>
+#include <QVariant>
 #include <QVector>
 
 namespace {
@@ -59,8 +60,8 @@ PlcComm::PlcComm(const QString &host, int port, int slaveId, quint8 planeModel, 
     }
 
     m_modbusClient = new QModbusTcpClient(this);
-    m_modbusClient->setConnectionParameter(QModbusDevice::NetworkAddressParameter, m_host);
-    m_modbusClient->setConnectionParameter(QModbusDevice::NetworkPortParameter, m_port);
+    m_modbusClient->setConnectionParameter(QModbusDevice::NetworkAddressParameter, QVariant(m_host));
+    m_modbusClient->setConnectionParameter(QModbusDevice::NetworkPortParameter, QVariant(m_port));
     m_modbusClient->setTimeout(800);
     m_modbusClient->setNumberOfRetries(1);
     connect(m_modbusClient, &QModbusClient::stateChanged, this, &PlcComm::onModbusStateChanged);
@@ -113,8 +114,8 @@ void PlcComm::connectToPlc()
         log(Protocol::LogWarn, QStringLiteral("已在连接或已连接，忽略重复连接"));
         return;
     }
-    m_modbusClient->setConnectionParameter(QModbusDevice::NetworkAddressParameter, m_host);
-    m_modbusClient->setConnectionParameter(QModbusDevice::NetworkPortParameter, m_port);
+    m_modbusClient->setConnectionParameter(QModbusDevice::NetworkAddressParameter, QVariant(m_host));
+    m_modbusClient->setConnectionParameter(QModbusDevice::NetworkPortParameter, QVariant(m_port));
     if (!m_modbusClient->connectDevice()) {
         log(Protocol::LogError,
             QStringLiteral("connectDevice 失败：%1").arg(m_modbusClient->errorString()));
