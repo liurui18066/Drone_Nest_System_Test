@@ -289,10 +289,8 @@ QString plcStateText(quint8 state)
 QString doorOpcodeText(quint8 opcode)
 {
     switch (opcode) {
-    case kDoorOpenWithPlane: return QStringLiteral("有飞机开门");
-    case kDoorCloseWithPlane: return QStringLiteral("有飞机关门");
-    case kDoorOpenNoPlane: return QStringLiteral("无飞机开门");
-    case kDoorCloseNoPlane: return QStringLiteral("无飞机关门");
+    case kDoorOpen: return QStringLiteral("打开舱门");
+    case kDoorClose: return QStringLiteral("关闭舱门");
     default: return QStringLiteral("未定义操作码0x%1").arg(opcode, 2, 16, QLatin1Char('0'));
     }
 }
@@ -574,10 +572,10 @@ QString describeTxFrame(quint8 cmd, const QByteArray &frame)
 
 bool selfCheck(QString *error)
 {
-    const QByteArray door = buildMotionFrame(kCmdDoor, kDoorOpenWithPlane, kPlaneModelQ20);
+    const QByteArray door = buildMotionFrame(kCmdDoor, kDoorOpen, kPlaneModelQ20);
     if (door.size() != kFrameBytes || static_cast<quint8>(door.at(0)) != kDeviceType
         || static_cast<quint8>(door.at(1)) != kCmdDoor
-        || static_cast<quint8>(door.at(3)) != kDoorOpenWithPlane
+        || static_cast<quint8>(door.at(3)) != kDoorOpen
         || static_cast<quint8>(door.at(4)) != 0
         || static_cast<quint8>(door.at(5)) != kPlaneModelQ20) {
         if (error) *error = QStringLiteral("舱门帧字节位置与接口表不一致");

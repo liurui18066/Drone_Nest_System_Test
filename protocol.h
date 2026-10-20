@@ -13,14 +13,14 @@
  * 表的规则是：奇数字节为高字节，偶数字节为低字节。下面的“字节 N”都是表里的
  * 1 起编号，代码里的下标是 N-1。
  *
- * 上报（上位机只读，PLC 每 1 秒写一次，包序号在字节 4 自增）：
+ * 上报（上位机只读。协议表写 PLC 每 1 秒写入；当前上位机每 3 秒读一次。包序号在字节 4）：
  *   0x01  42000  健康状态
  *   0x02  42100  伺服力矩、坐标、时分秒
  *   0x03  42200  电池。本表只写“详见 Word”，程序不解析载荷。
  * 连续两次及以上读到同一包序号，记一条丢包日志（时间、客户端名称、说明）。
  *
  * 命令（上位机写同一块寄存器，PLC 把回复填回这一块）：
- *   0x04  42300  舱门。字节 4 操作码，字节 6 飞机型号。
+ *   0x04  42300  舱门。字节 4：01 打开，02 关闭。字节 6 飞机型号，01 为 Q20。
  *   0x05  42400  前后归正。字节 4：01 张开，02 夹紧。
  *   0x06  42500  左右（充电）归正。同上。
  *   0x07  42600  字节 4 复位，6 设备风扇，8 电控柜风扇，10 空调，12 充电器电源，14 二维码灯。
@@ -32,8 +32,8 @@
  * 与接口表的列号冲突。发送以接口表为准；解析时若字节 28 没有状态、字节 3 却出现
  * 02/03/80/81，仍接受该结果，并在日志里写明“回复落在字节 3，与流程表一致”。
  *
- * 舱门操作码同时采纳流程表和告警码：01 有飞机开门，02 有飞机关门，
- * 03 无飞机开门，04 无飞机关门。主表正文把 01/02 简写成打开/关闭。
+ * 舱门操作码以接口协议表为准：01 打开舱门，02 关闭舱门，不按有无飞机拆开。
+ * 《控制流程细节0810》里的 01/02/03/04 是旧流程，发送时不再使用。
  */
 
 namespace Protocol {
@@ -71,10 +71,8 @@ constexpr quint8 kOpOff = 0x02;
 constexpr quint8 kLinkUp = 0x01;
 constexpr quint8 kLinkDown = 0x02;
 
-constexpr quint8 kDoorOpenWithPlane = 0x01;
-constexpr quint8 kDoorCloseWithPlane = 0x02;
-constexpr quint8 kDoorOpenNoPlane = 0x03;
-constexpr quint8 kDoorCloseNoPlane = 0x04;
+constexpr quint8 kDoorOpen = 0x01;
+constexpr quint8 kDoorClose = 0x02;
 constexpr quint8 kGripOpen = 0x01;
 constexpr quint8 kGripClose = 0x02;
 constexpr quint8 kPlaneModelQ20 = 0x01;

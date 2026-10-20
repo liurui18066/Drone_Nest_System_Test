@@ -24,31 +24,13 @@ PageDebugControl::PageDebugControl(QWidget *parent)
         });
     };
 
-    // 操作码写在字节 4。01–04 来自流程表和告警码，主表正文把 01/02 简写成开/关。
-    add(QStringLiteral("有飞机开门"), 0, 0, Protocol::kCmdDoor, Protocol::kDoorOpenWithPlane);
-    add(QStringLiteral("有飞机关门"), 0, 1, Protocol::kCmdDoor, Protocol::kDoorCloseWithPlane);
-    add(QStringLiteral("无飞机开门"), 0, 2, Protocol::kCmdDoor, Protocol::kDoorOpenNoPlane);
-    add(QStringLiteral("无飞机关门"), 1, 0, Protocol::kCmdDoor, Protocol::kDoorCloseNoPlane);
-    add(QStringLiteral("张开前后归正"), 1, 1, Protocol::kCmdGripFr, Protocol::kGripOpen);
-    add(QStringLiteral("夹紧前后归正"), 1, 2, Protocol::kCmdGripFr, Protocol::kGripClose);
+    // 接口表：字节 4 为 01 打开、02 关闭，不按有无飞机区分。
+    add(QStringLiteral("打开舱门"), 0, 0, Protocol::kCmdDoor, Protocol::kDoorOpen);
+    add(QStringLiteral("关闭舱门"), 0, 1, Protocol::kCmdDoor, Protocol::kDoorClose);
+    add(QStringLiteral("张开前后归正"), 1, 0, Protocol::kCmdGripFr, Protocol::kGripOpen);
+    add(QStringLiteral("夹紧前后归正"), 1, 1, Protocol::kCmdGripFr, Protocol::kGripClose);
     add(QStringLiteral("张开充电归正"), 2, 0, Protocol::kCmdGripCh, Protocol::kGripOpen);
     add(QStringLiteral("夹紧充电归正"), 2, 1, Protocol::kCmdGripCh, Protocol::kGripClose);
-
-    auto *reset = new QPushButton(QStringLiteral("PLC复位"));
-    reset->setMinimumSize(180, 52);
-    grid->addWidget(reset, 2, 2);
-    m_buttons.append(reset);
-    connect(reset, &QPushButton::clicked, this, [this]() {
-        if (!m_comm) return;
-        if (!m_comm->isPlcConnected()) {
-            QMessageBox::warning(this, QStringLiteral("PLC"), QStringLiteral("PLC 未连接"));
-            return;
-        }
-        if (m_waiting) return;
-        setBusy(true, QStringLiteral("已发送 PLC 复位，等待字节28"));
-        m_waitingCmd = Protocol::kCmdPlcCtrl;
-        m_comm->sendPlcControl(Protocol::kCtrlReset, Protocol::kOpOn);
-    });
 
     m_result = new QLabel(QStringLiteral("命令结果会显示在这里，详细帧在下方日志。机械动作不会自动重发。"));
     m_result->setWordWrap(true);

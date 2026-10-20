@@ -68,7 +68,7 @@ PlcComm::PlcComm(const QString &host, int port, int slaveId, quint8 planeModel, 
     connect(m_modbusClient, &QModbusClient::errorOccurred, this, &PlcComm::onErrorOccurred);
 
     m_readTimer = new QTimer(this);
-    m_readTimer->setInterval(1000);
+    m_readTimer->setInterval(3000);
     connect(m_readTimer, &QTimer::timeout, this, &PlcComm::periodicRead);
 
     m_commandPollTimer = new QTimer(this);
@@ -101,7 +101,7 @@ void PlcComm::log(int level, const QString &text) const
 void PlcComm::start()
 {
     log(Protocol::LogInfo,
-        QStringLiteral("准备连接 %1:%2 从站=%3。上报地址 42000/42100/42200 每 1 秒只读；"
+        QStringLiteral("准备连接 %1:%2 从站=%3。上报地址 42000/42100/42200 每 3 秒只读；"
                        "命令写 42300–42700，回复看字节28。PDU 地址按协议表原值发送。")
             .arg(m_host).arg(m_port).arg(m_slaveId));
     connectToPlc();
@@ -152,7 +152,7 @@ void PlcComm::onModbusStateChanged(QModbusDevice::State state)
         m_reconnectArmed = false;
         m_manualDisconnect = false;
         m_readTimer->start();
-        log(Protocol::LogInfo, QStringLiteral("Modbus 已连接，开始 1 秒轮询健康/伺服/电池"));
+        log(Protocol::LogInfo, QStringLiteral("Modbus 已连接，开始 3 秒轮询健康/伺服/电池"));
         periodicRead();
         // 单步调试阶段不把 MQTT/串口链路写成 0x08。网络帧仍保留，恢复链路上报时再入队。
     } else {
