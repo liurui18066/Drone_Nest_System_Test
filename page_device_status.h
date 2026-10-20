@@ -26,6 +26,7 @@ public:
     void setPlcPort(quint16 port);
     QString plcIp() const;
     quint16 plcPort() const;
+    void setMqttClientId(const QString &clientId);
 
 signals:
     void connectPlcRequested(const QString &ip, quint16 port);
@@ -43,6 +44,7 @@ private:
     IndicatorLight *m_mqttLight = nullptr;
     IndicatorLight *m_windLight = nullptr;
     IndicatorLight *m_climateLight = nullptr;
+    IndicatorLight *m_upsLight = nullptr;
     IndicatorLight *m_doorOpen = nullptr;
     IndicatorLight *m_doorClose = nullptr;
     IndicatorLight *m_frOpen = nullptr;
@@ -65,10 +67,25 @@ private:
     QLineEdit *m_plcPort = nullptr;
     QPushButton *m_connect = nullptr;
     QPushButton *m_close = nullptr;
-    QLineEdit *m_wind = nullptr;
-    QLineEdit *m_rain = nullptr;
-    QLineEdit *m_indoor = nullptr;
-    QLineEdit *m_cabinet = nullptr;
+    QWidget *m_fanPill = nullptr;
+    QLabel *m_fanOff = nullptr;
+    QLabel *m_fanOn = nullptr;
+    QLabel *m_deviceTemp = nullptr;
+    QLabel *m_deviceHum = nullptr;
+    QLabel *m_cabinetTemp = nullptr;
+    QLabel *m_cabinetHum = nullptr;
+    QLabel *m_windValue = nullptr;
+    QLabel *m_rainValue = nullptr;
+    QLabel *m_upsSupply = nullptr;
+    QLabel *m_upsRectifier = nullptr;
+    QLabel *m_upsCharge = nullptr;
+    QLabel *m_upsRunning = nullptr;
+    QLabel *m_upsBackup = nullptr;
+    QLabel *m_mqttId = nullptr;
+    QLabel *m_mqttHeartbeat = nullptr;
+    QLabel *m_mqttSensor = nullptr;
+    QLabel *m_publishDot = nullptr;
+    QLabel *m_receiveDot = nullptr;
     QLineEdit *m_torque = nullptr;
     QLineEdit *m_position = nullptr;
     QLineEdit *m_servoTime = nullptr;

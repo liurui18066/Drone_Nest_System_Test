@@ -59,6 +59,7 @@ MainWindow::MainWindow(QWidget *parent)
     AppConfig config = loadAppConfig(configPath(), &created);
     m_statusPage->setPlcIp(config.plcIp);
     m_statusPage->setPlcPort(config.plcPort);
+    m_statusPage->setMqttClientId(config.mqttClientId);
 
     QString selfCheckError;
     if (!Protocol::selfCheck(&selfCheckError)) {

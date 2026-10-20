@@ -1,10 +1,12 @@
 #include "page_device_status.h"
 
 #include <QFormLayout>
+#include <QFrame>
 #include <QGroupBox>
-#include <QStringList>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QPaintEvent>
+#include <QPainter>
 #include <QScrollArea>
 #include <QVBoxLayout>
 
@@ -21,6 +23,201 @@ QWidget *lightRow(const QString &text, IndicatorLight *light)
     return row;
 }
 
+enum IconKind {
+    IconFan, IconTemp, IconDrop, IconCabinet,
+    IconWind, IconRain, IconPlug, IconBolt,
+    IconBattery, IconPower, IconClock, IconId
+};
+
+QPixmap statusIcon(IconKind kind)
+{
+    QPixmap pix(16, 16);
+    pix.fill(Qt::transparent);
+    QPainter p(&pix);
+    p.setRenderHint(QPainter::Antialiasing);
+    QPen pen(QColor(QStringLiteral("#8b95a7")), 1.4, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    p.setPen(pen);
+    p.setBrush(Qt::NoBrush);
+    switch (kind) {
+    case IconFan:
+        p.drawEllipse(QRectF(2, 2, 12, 12));
+        p.drawLine(QPointF(8, 3), QPointF(8, 13));
+        p.drawLine(QPointF(3, 8), QPointF(13, 8));
+        break;
+    case IconTemp:
+        p.drawRoundedRect(QRectF(6, 1.5, 4, 9), 2, 2);
+        p.drawEllipse(QRectF(4.5, 8, 7, 7));
+        break;
+    case IconDrop:
+        p.drawEllipse(QRectF(4, 6, 8, 8));
+        p.drawLine(QPointF(8, 2), QPointF(5, 8));
+        p.drawLine(QPointF(8, 2), QPointF(11, 8));
+        break;
+    case IconCabinet:
+        p.drawRoundedRect(QRectF(3, 2, 10, 12), 1.5, 1.5);
+        p.drawLine(QPointF(8, 2), QPointF(8, 14));
+        break;
+    case IconWind:
+        p.drawArc(QRectF(2, 3, 12, 6), 20 * 16, 140 * 16);
+        p.drawArc(QRectF(2, 8, 12, 6), 20 * 16, 140 * 16);
+        break;
+    case IconRain:
+        p.drawLine(QPointF(5, 2), QPointF(3, 7));
+        p.drawLine(QPointF(9, 2), QPointF(7, 7));
+        p.drawLine(QPointF(13, 2), QPointF(11, 7));
+        p.drawLine(QPointF(4, 10), QPointF(2.5, 14));
+        p.drawLine(QPointF(8, 10), QPointF(6.5, 14));
+        p.drawLine(QPointF(12, 10), QPointF(10.5, 14));
+        break;
+    case IconPlug:
+        p.drawRoundedRect(QRectF(3, 6, 10, 8), 1.5, 1.5);
+        p.drawLine(QPointF(6, 6), QPointF(6, 2.5));
+        p.drawLine(QPointF(10, 6), QPointF(10, 2.5));
+        break;
+    case IconBolt:
+        p.drawLine(QPointF(9, 1.5), QPointF(4, 9));
+        p.drawLine(QPointF(4, 9), QPointF(8, 9));
+        p.drawLine(QPointF(8, 9), QPointF(6, 14.5));
+        p.drawLine(QPointF(6, 14.5), QPointF(12, 7));
+        p.drawLine(QPointF(12, 7), QPointF(8, 7));
+        p.drawLine(QPointF(8, 7), QPointF(9, 1.5));
+        break;
+    case IconBattery:
+        p.drawRoundedRect(QRectF(2, 4, 10, 8), 1.2, 1.2);
+        p.drawLine(QPointF(12, 6.5), QPointF(12, 9.5));
+        p.drawLine(QPointF(4, 8), QPointF(8, 8));
+        break;
+    case IconPower:
+        p.drawArc(QRectF(4, 3, 8, 8), 40 * 16, 280 * 16);
+        p.drawLine(QPointF(8, 2), QPointF(8, 7));
+        break;
+    case IconClock:
+        p.drawEllipse(QRectF(2, 2, 12, 12));
+        p.drawLine(QPointF(8, 8), QPointF(8, 5));
+        p.drawLine(QPointF(8, 8), QPointF(11, 9));
+        break;
+    case IconId:
+        p.drawRoundedRect(QRectF(2, 3, 12, 10), 1.5, 1.5);
+        p.drawLine(QPointF(5, 7), QPointF(11, 7));
+        p.drawLine(QPointF(5, 10), QPointF(9, 10));
+        break;
+    }
+    return pix;
+}
+
+QLabel *iconLabel(IconKind kind)
+{
+    auto *label = new QLabel;
+    label->setPixmap(statusIcon(kind));
+    label->setFixedSize(16, 16);
+    return label;
+}
+
+void setCardCheck(QLabel *label, bool ok)
+{
+    label->setText(ok ? QStringLiteral("✓") : QString());
+    label->setAlignment(Qt::AlignCenter);
+    label->setStyleSheet(ok
+                             ? QStringLiteral("background:#2f9e44; color:white; border-radius:9px; font-size:11px; font-weight:700;")
+                             : QStringLiteral("background:#dfe3ea; color:transparent; border-radius:9px;"));
+}
+
+void setActivityDot(QLabel *dot, bool on)
+{
+    dot->setStyleSheet(QStringLiteral("background:%1; border-radius:5px;")
+                           .arg(on ? QStringLiteral("#2f9e44") : QStringLiteral("#c5cad3")));
+}
+
+QLabel *valueLabel(const QString &text)
+{
+    auto *label = new QLabel(text);
+    label->setStyleSheet(QStringLiteral("color:#1c2434; font-size:13px;"));
+    label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    return label;
+}
+
+QWidget *infoRow(IconKind kind, const QString &name, QWidget *right)
+{
+    auto *row = new QWidget;
+    auto *layout = new QHBoxLayout(row);
+    layout->setContentsMargins(0, 2, 0, 2);
+    layout->setSpacing(8);
+    layout->addWidget(iconLabel(kind));
+    auto *title = new QLabel(name);
+    title->setStyleSheet(QStringLiteral("color:#8b95a7; font-size:13px;"));
+    layout->addWidget(title);
+    layout->addStretch();
+    layout->addWidget(right);
+    return row;
+}
+
+class FanKnob : public QWidget
+{
+public:
+    explicit FanKnob(QWidget *parent = nullptr)
+        : QWidget(parent)
+    {
+        setFixedSize(44, 22);
+    }
+
+    void setOn(bool on)
+    {
+        m_on = on;
+        update();
+    }
+
+protected:
+    void paintEvent(QPaintEvent *) override
+    {
+        QPainter p(this);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setPen(Qt::NoPen);
+        p.setBrush(m_on ? QColor(QStringLiteral("#b7ebc6")) : QColor(QStringLiteral("#d5dbe3")));
+        p.drawRoundedRect(rect(), 11, 11);
+        const int knob = 16;
+        const int x = m_on ? width() - knob - 3 : 3;
+        p.setBrush(Qt::white);
+        p.drawEllipse(x, 3, knob, knob);
+    }
+
+private:
+    bool m_on = false;
+};
+
+QFrame *makeCard(const QString &title, QLabel *check, QVBoxLayout **body)
+{
+    auto *card = new QFrame;
+    card->setObjectName(QStringLiteral("envCard"));
+    card->setStyleSheet(QStringLiteral(
+        "QFrame#envCard { background:#ffffff; border:1px solid #e6e8ef; border-radius:12px; }"));
+    card->setMinimumWidth(220);
+    auto *layout = new QVBoxLayout(card);
+    layout->setContentsMargins(14, 12, 14, 12);
+    layout->setSpacing(8);
+
+    auto *head = new QHBoxLayout;
+    head->setSpacing(8);
+    auto *name = new QLabel(title);
+    name->setStyleSheet(QStringLiteral("color:#1c2434; font-size:15px; font-weight:600;"));
+    check->setFixedSize(18, 18);
+    setCardCheck(check, false);
+    head->addWidget(name);
+    head->addStretch();
+    head->addWidget(check);
+    layout->addLayout(head);
+
+    *body = new QVBoxLayout;
+    (*body)->setSpacing(4);
+    layout->addLayout(*body);
+    layout->addStretch();
+    return card;
+}
+
+QString dash()
+{
+    return QStringLiteral("—");
+}
+
 } // namespace
 
 IndicatorLight::IndicatorLight(QWidget *parent)
@@ -32,7 +229,6 @@ IndicatorLight::IndicatorLight(QWidget *parent)
 
 void IndicatorLight::setState(bool on)
 {
-    // 绿色表示条件成立。急停、烟雾在界面上反过来用：亮起表示异常。
     setStyleSheet(QStringLiteral("background-color:%1; border-radius:9px;")
                       .arg(on ? QStringLiteral("#2e7d32") : QStringLiteral("#9e9e9e")));
 }
@@ -44,6 +240,7 @@ PageDeviceStatus::PageDeviceStatus(QWidget *parent)
     m_mqttLight = new IndicatorLight;
     m_windLight = new IndicatorLight;
     m_climateLight = new IndicatorLight;
+    m_upsLight = new IndicatorLight;
     m_doorOpen = new IndicatorLight;
     m_doorClose = new IndicatorLight;
     m_frOpen = new IndicatorLight;
@@ -71,12 +268,9 @@ PageDeviceStatus::PageDeviceStatus(QWidget *parent)
     m_fault = new QLabel(QStringLiteral("故障/告警：等待数据"));
     m_fault->setWordWrap(true);
 
-    auto *netBox = new QGroupBox(QStringLiteral("链路"));
+    auto *netBox = new QGroupBox(QStringLiteral("PLC 连接"));
     auto *netLayout = new QVBoxLayout(netBox);
     netLayout->addWidget(lightRow(QStringLiteral("PLC"), m_plcLight));
-    netLayout->addWidget(lightRow(QStringLiteral("MQTT"), m_mqttLight));
-    netLayout->addWidget(lightRow(QStringLiteral("风速雨雪"), m_windLight));
-    netLayout->addWidget(lightRow(QStringLiteral("温湿度"), m_climateLight));
     auto *addr = new QHBoxLayout;
     addr->addWidget(m_plcIp);
     addr->addWidget(m_plcPort);
@@ -109,24 +303,95 @@ PageDeviceStatus::PageDeviceStatus(QWidget *parent)
     inLayout->addWidget(lightRow(QStringLiteral("二维码灯"), m_qr));
     inLayout->addWidget(m_mode);
 
-    m_wind = new QLineEdit;
-    m_rain = new QLineEdit;
-    m_indoor = new QLineEdit;
-    m_cabinet = new QLineEdit;
+    m_fanOff = new QLabel(QStringLiteral("关闭"));
+    m_fanOn = new QLabel(QStringLiteral("打开"));
+    m_fanOff->setStyleSheet(QStringLiteral("color:#5c6570; font-size:12px;"));
+    m_fanOn->setStyleSheet(QStringLiteral("color:#8b95a7; font-size:12px;"));
+    auto *knob = new FanKnob;
+    m_fanPill = knob;
+    auto *fanSwitch = new QWidget;
+    auto *fanLayout = new QHBoxLayout(fanSwitch);
+    fanLayout->setContentsMargins(0, 0, 0, 0);
+    fanLayout->setSpacing(6);
+    fanLayout->addWidget(m_fanOff);
+    fanLayout->addWidget(knob);
+    fanLayout->addWidget(m_fanOn);
+
+    m_deviceTemp = valueLabel(dash());
+    m_deviceHum = valueLabel(dash());
+    m_cabinetTemp = valueLabel(dash());
+    m_cabinetHum = valueLabel(dash());
+    m_windValue = valueLabel(dash());
+    m_rainValue = valueLabel(dash());
+    m_upsSupply = valueLabel(dash());
+    m_upsRectifier = valueLabel(dash());
+    m_upsCharge = valueLabel(dash());
+    m_upsRunning = valueLabel(dash());
+    m_upsBackup = valueLabel(dash());
+    m_mqttId = valueLabel(dash());
+    m_mqttHeartbeat = valueLabel(dash());
+    m_mqttSensor = valueLabel(dash());
+    m_publishDot = new QLabel;
+    m_receiveDot = new QLabel;
+    m_publishDot->setFixedSize(10, 10);
+    m_receiveDot->setFixedSize(10, 10);
+    setActivityDot(m_publishDot, false);
+    setActivityDot(m_receiveDot, false);
+
+    auto *publishRow = new QWidget;
+    auto *publishLayout = new QHBoxLayout(publishRow);
+    publishLayout->setContentsMargins(0, 0, 0, 0);
+    publishLayout->setSpacing(14);
+    auto addDot = [publishLayout](const QString &name, QLabel *dot) {
+        auto *wrap = new QWidget;
+        auto *row = new QHBoxLayout(wrap);
+        row->setContentsMargins(0, 0, 0, 0);
+        row->setSpacing(6);
+        auto *text = new QLabel(name);
+        text->setStyleSheet(QStringLiteral("color:#8b95a7; font-size:13px;"));
+        row->addWidget(dot);
+        row->addWidget(text);
+        publishLayout->addWidget(wrap);
+    };
+    addDot(QStringLiteral("发布"), m_publishDot);
+    addDot(QStringLiteral("接收"), m_receiveDot);
+
+    QVBoxLayout *climateBody = nullptr;
+    QVBoxLayout *windBody = nullptr;
+    QVBoxLayout *upsBody = nullptr;
+    QVBoxLayout *mqttBody = nullptr;
+    auto *climateCard = makeCard(QStringLiteral("温湿度"), m_climateLight, &climateBody);
+    auto *windCard = makeCard(QStringLiteral("风速雨雪"), m_windLight, &windBody);
+    auto *upsCard = makeCard(QStringLiteral("UPS"), m_upsLight, &upsBody);
+    auto *mqttCard = makeCard(QStringLiteral("MQTT"), m_mqttLight, &mqttBody);
+
+    climateBody->addWidget(infoRow(IconFan, QStringLiteral("温控风扇"), fanSwitch));
+    climateBody->addWidget(infoRow(IconTemp, QStringLiteral("设备温度"), m_deviceTemp));
+    climateBody->addWidget(infoRow(IconDrop, QStringLiteral("设备湿度"), m_deviceHum));
+    climateBody->addWidget(infoRow(IconTemp, QStringLiteral("电柜温度"), m_cabinetTemp));
+    climateBody->addWidget(infoRow(IconDrop, QStringLiteral("电柜湿度"), m_cabinetHum));
+
+    windBody->addWidget(infoRow(IconWind, QStringLiteral("风速"), m_windValue));
+    windBody->addWidget(infoRow(IconRain, QStringLiteral("雨雪"), m_rainValue));
+
+    upsBody->addWidget(infoRow(IconPlug, QStringLiteral("供电方式"), m_upsSupply));
+    upsBody->addWidget(infoRow(IconBolt, QStringLiteral("整流侧供电状态"), m_upsRectifier));
+    upsBody->addWidget(infoRow(IconBattery, QStringLiteral("电池充电状态"), m_upsCharge));
+    upsBody->addWidget(infoRow(IconPower, QStringLiteral("电池开机状态"), m_upsRunning));
+    upsBody->addWidget(infoRow(IconClock, QStringLiteral("电池后备时间"), m_upsBackup));
+
+    mqttBody->addWidget(infoRow(IconId, QStringLiteral("设备ID"), m_mqttId));
+    mqttBody->addWidget(infoRow(IconClock, QStringLiteral("status (heartbeat)"), m_mqttHeartbeat));
+    mqttBody->addWidget(infoRow(IconClock, QStringLiteral("status (sensor)"), m_mqttSensor));
+    mqttBody->addWidget(publishRow);
+
     m_torque = new QLineEdit;
     m_position = new QLineEdit;
     m_servoTime = new QLineEdit;
-    const QList<QLineEdit *> fields = {m_wind, m_rain, m_indoor, m_cabinet, m_torque, m_position, m_servoTime};
+    const QList<QLineEdit *> fields = {m_torque, m_position, m_servoTime};
     for (QLineEdit *field : fields) {
         field->setReadOnly(true);
     }
-
-    auto *weatherBox = new QGroupBox(QStringLiteral("气象（串口，不在 PLC 帧内）"));
-    auto *weatherForm = new QFormLayout(weatherBox);
-    weatherForm->addRow(QStringLiteral("风速"), m_wind);
-    weatherForm->addRow(QStringLiteral("雨雪"), m_rain);
-    weatherForm->addRow(QStringLiteral("设备内温湿度"), m_indoor);
-    weatherForm->addRow(QStringLiteral("电柜温湿度"), m_cabinet);
 
     auto *servoBox = new QGroupBox(QStringLiteral("伺服（字节6起，力矩为表中的百分比原值）"));
     auto *servoForm = new QFormLayout(servoBox);
@@ -139,11 +404,18 @@ PageDeviceStatus::PageDeviceStatus(QWidget *parent)
     columns->addWidget(mechBox);
     columns->addWidget(inBox);
 
+    auto *cards = new QHBoxLayout;
+    cards->setSpacing(12);
+    cards->addWidget(climateCard, 1);
+    cards->addWidget(windCard, 1);
+    cards->addWidget(upsCard, 1);
+    cards->addWidget(mqttCard, 1);
+
     auto *content = new QWidget;
     auto *contentLayout = new QVBoxLayout(content);
     contentLayout->addLayout(columns);
     contentLayout->addWidget(m_fault);
-    contentLayout->addWidget(weatherBox);
+    contentLayout->addLayout(cards);
     contentLayout->addWidget(servoBox);
     contentLayout->addStretch();
 
@@ -170,6 +442,11 @@ void PageDeviceStatus::setPlcPort(quint16 port) { m_plcPort->setText(QString::nu
 QString PageDeviceStatus::plcIp() const { return m_plcIp->text().trimmed(); }
 quint16 PageDeviceStatus::plcPort() const { return m_plcPort->text().toUShort(); }
 
+void PageDeviceStatus::setMqttClientId(const QString &clientId)
+{
+    m_mqttId->setText(clientId.isEmpty() ? dash() : clientId);
+}
+
 void PageDeviceStatus::setPlcConnected(bool connected)
 {
     m_plcLight->setState(connected);
@@ -181,7 +458,9 @@ void PageDeviceStatus::setPlcConnected(bool connected)
 
 void PageDeviceStatus::setMqttConnected(bool connected)
 {
-    m_mqttLight->setState(connected);
+    setCardCheck(m_mqttLight, connected);
+    setActivityDot(m_publishDot, connected);
+    setActivityDot(m_receiveDot, connected);
 }
 
 void PageDeviceStatus::updateHealth(const Protocol::HealthStatus &status)
@@ -202,6 +481,15 @@ void PageDeviceStatus::updateHealth(const Protocol::HealthStatus &status)
     m_ac->setState(status.airCondition);
     m_charger->setState(status.chargerPower);
     m_qr->setState(status.qrLight);
+    if (auto *knob = dynamic_cast<FanKnob *>(m_fanPill)) {
+        knob->setOn(status.deviceFan);
+    }
+    m_fanOff->setStyleSheet(status.deviceFan
+                                ? QStringLiteral("color:#8b95a7; font-size:12px;")
+                                : QStringLiteral("color:#5c6570; font-size:12px; font-weight:600;"));
+    m_fanOn->setStyleSheet(status.deviceFan
+                               ? QStringLiteral("color:#1f7a45; font-size:12px; font-weight:600;")
+                               : QStringLiteral("color:#8b95a7; font-size:12px;"));
     m_mode->setText(QStringLiteral("PLC状态：%1（%2）  复位完成：%3")
                         .arg(Protocol::plcStateText(status.plcState))
                         .arg(status.automatic ? QStringLiteral("自动位") : QStringLiteral("手动位"))
@@ -247,23 +535,30 @@ void PageDeviceStatus::updateServo(const Protocol::ServoStatus &status)
 
 void PageDeviceStatus::updateWeather(const WeatherComm::Reading &reading)
 {
-    m_windLight->setState(reading.windRainLink);
-    m_climateLight->setState(reading.climateLink);
-    m_wind->setText(reading.windValid ? QString::number(reading.windSpeed, 'f', 1) + QStringLiteral(" m/s")
-                                      : QStringLiteral("-"));
+    setCardCheck(m_windLight, reading.windRainLink);
+    setCardCheck(m_climateLight, reading.climateLink);
+    m_windValue->setText(reading.windValid
+                             ? QString::number(reading.windSpeed, 'f', 1) + QStringLiteral(" m/s")
+                             : dash());
     if (!reading.rainValid) {
-        m_rain->setText(QStringLiteral("-"));
+        m_rainValue->setText(dash());
     } else if (reading.rain == 1) {
-        m_rain->setText(QStringLiteral("有雨雪"));
+        m_rainValue->setText(QStringLiteral("有"));
     } else if (reading.rain == 0) {
-        m_rain->setText(QStringLiteral("无雨雪"));
+        m_rainValue->setText(QStringLiteral("无"));
     } else {
-        m_rain->setText(QStringLiteral("未知"));
+        m_rainValue->setText(QStringLiteral("未知"));
     }
-    m_indoor->setText(reading.indoorValid
-                          ? QStringLiteral("%1 ℃  %2 %RH").arg(reading.indoorTemp, 0, 'f', 1).arg(reading.indoorHum, 0, 'f', 1)
-                          : QStringLiteral("-"));
-    m_cabinet->setText(reading.cabinetValid
-                           ? QStringLiteral("%1 ℃  %2 %RH").arg(reading.cabinetTemp, 0, 'f', 1).arg(reading.cabinetHum, 0, 'f', 1)
-                           : QStringLiteral("-"));
+    m_deviceTemp->setText(reading.indoorValid
+                              ? QString::number(reading.indoorTemp, 'f', 1) + QStringLiteral(" ℃")
+                              : dash());
+    m_deviceHum->setText(reading.indoorValid
+                             ? QString::number(reading.indoorHum, 'f', 1) + QStringLiteral("%")
+                             : dash());
+    m_cabinetTemp->setText(reading.cabinetValid
+                               ? QString::number(reading.cabinetTemp, 'f', 1) + QStringLiteral(" ℃")
+                               : dash());
+    m_cabinetHum->setText(reading.cabinetValid
+                              ? QString::number(reading.cabinetHum, 'f', 1) + QStringLiteral("%")
+                              : dash());
 }
