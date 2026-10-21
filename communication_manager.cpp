@@ -43,9 +43,10 @@ void CommunicationManager::startAll(const AppConfig &config)
         m_mqtt = nullptr;
     }
     startPlc();
-    // 当前只做 PLC 收发和单步调试。MQTT、风速雨雪、温湿度串口先不启动。
+    startWeather();
+    // MQTT 和 UPS 仍不启动。风速雨雪、温湿度串口按 config.xml 打开。
     emit logMessage(Protocol::LogInfo, QStringLiteral("系统"),
-                    QStringLiteral("当前只调试 PLC。MQTT 和气象/温湿度串口已暂停，连接后不写 42700 网络状态。"));
+                    QStringLiteral("已启动风速雨雪和温湿度串口。MQTT、UPS 仍关闭。"));
 }
 
 bool CommunicationManager::isPlcConnected() const
